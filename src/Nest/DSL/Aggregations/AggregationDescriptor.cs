@@ -75,6 +75,9 @@ namespace Nest
 		[JsonProperty("value_count")]
 		IValueCountAggregator ValueCount { get; set; }
 
+        [JsonProperty("top_hits")]
+        ITopHitsAggregator TopHits { get; set; }
+
 		[JsonProperty("aggs")]
 		[JsonConverter(typeof(DictionaryKeysAreNotPropertyNamesJsonConverter))]
 		IDictionary<string, IAggregationContainer> Aggregations { get; set; }
@@ -100,6 +103,7 @@ namespace Nest
 		private ISignificantTermsAggregator _significantTerms;
 		public IAverageAggregator Average { get; set; }
 		public IValueCountAggregator ValueCount { get; set; }
+        private ITopHitsAggregator _topHits;
 		public IMaxAggregator Max { get; set; }
 		public IMinAggregator Min { get; set; }
 		public IStatsAggregator Stats { get; set; }
@@ -190,6 +194,12 @@ namespace Nest
 			set { _terms = value; }
 		}
 
+        public ITopHitsAggregator TopHits
+        {
+            get { return _topHits; }
+            set { _topHits = value; }
+        }
+
 		public ISignificantTermsAggregator SignificantTerms
 		{
 			get { return _significantTerms; }
@@ -251,8 +261,10 @@ namespace Nest
 		IValueCountAggregator IAggregationContainer.ValueCount { get; set; }
 		
 		ISignificantTermsAggregator IAggregationContainer.SignificantTerms { get; set; }
-		
-		ITermsAggregator IAggregationContainer.Terms { get; set; }
+
+        ITermsAggregator IAggregationContainer.Terms { get; set; }
+
+        ITopHitsAggregator IAggregationContainer.TopHits { get; set; }
 		
 		public AggregationDescriptor<T> Average(string name, Func<AverageAggregationDescriptor<T>, AverageAggregationDescriptor<T>> selector)
 		{
@@ -363,7 +375,12 @@ namespace Nest
 		{
 			return _SetInnerAggregation(name, selector, (a, d) => a.Terms = d);
 		}
-		
+
+        public AggregationDescriptor<T> TopHits(string name, Func<TopHitsAggregationDescriptor<T>, TopHitsAggregationDescriptor<T>> selector)
+        {
+            return _SetInnerAggregation(name, selector, (a, d) => a.TopHits = d);
+        }
+
 		public AggregationDescriptor<T> SignificantTerms(string name, Func<SignificantTermsAggregationDescriptor<T>, SignificantTermsAggregationDescriptor<T>> selector)
 		{
 			return _SetInnerAggregation(name, selector, (a, d) => a.SignificantTerms = d);

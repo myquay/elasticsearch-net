@@ -4,6 +4,9 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using System.Text;
+using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace Nest.Resolvers.Converters.Aggregations
 {
@@ -45,8 +48,10 @@ namespace Nest.Resolvers.Converters.Aggregations
 					return GetValueMetricOrAggregation(reader, serializer);
 				case "buckets":
 					return GetBucketAggregation(reader, serializer);
-				case "key":
-					return GetKeyedBucketItem(reader, serializer);
+                case "key":
+                    return GetKeyedBucketItem(reader, serializer);
+                case "hits":
+                    return GetHitsAggregation(reader, serializer);
 				case "from":
 				case "to":
 					return GetRangeAggregation(reader, serializer);
@@ -243,6 +248,26 @@ namespace Nest.Resolvers.Converters.Aggregations
 			} while (true);
 			return nestedAggs;
 		}
+
+        private IAggregation GetHitsAggregation(JsonReader reader, JsonSerializer serializer)
+        {
+            reader.Read();
+            reader.Read(); reader.Read();
+            var total = (reader.Value as long?).GetValueOrDefault(0);
+            reader.Read(); reader.Read();
+            var maxScore = (reader.Value as long?).GetValueOrDefault(0);
+            reader.Read(); reader.Read();
+
+            //TODO: Would be great to have this hook into the existing IHit<T> infrastructure rather than just a bunch of dynamics.
+            var items = JArray.Load(reader);
+            var hitsResult = new TopHitsItem() { Total = total, MaxScore = maxScore, Items = items.ToArray<dynamic>() };
+
+            reader.Read();
+
+            hitsResult.Aggregations = this.GetNestedAggregations(reader, serializer);
+            return hitsResult;
+
+        }
 
 		private IAggregation GetBucketAggregation(JsonReader reader, JsonSerializer serializer)
 		{
